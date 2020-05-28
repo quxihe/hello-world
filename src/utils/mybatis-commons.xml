@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="commons">
+	<!-- 定义综合查询前缀，后缀sql -->
+	
+	<sql id="prefixSql">
+		<!--<dynamic> -->
+		    
+			<if test="doCount == false">
+				select count(*) from (
+			</if>
+			<if test="doCount == true">
+				SELECT * FROM (select row_.*, rownum start_rownum_ from
+				(
+			</if>
+		<!--</dynamic> -->
+	</sql>
+	<sql id="suffixSql">
+		<!--<dynamic> -->
+			<if test="doCount == false">)</if>
+			<if test="doCount == true">
+				<![CDATA[
+					) row_ WHERE rownum <= #{startIndex,jdbcType=NUMERIC}+ #{pageSize,jdbcType=NUMERIC})  WHERE start_rownum_ > #{startIndex,jdbcType=NUMERIC}	
+				]]>
+			</if>
+		<!--</dynamic> -->
+	</sql>
+	<sql id="countPrefix">select count(*) from (</sql>
+	<sql id="countSuffix">)</sql>
+	<sql id="pagePrefix">
+		<!--<dynamic> -->
+			<if test="pageSize != null">
+				SELECT * FROM ( select rownum r, union_tb.* from (
+			</if>
+		<!--</dynamic>-->
+	</sql>
+	<sql id="pageSuffix">
+		<!-- <dynamic> -->
+			<if test="pageSize != null">
+				<![CDATA[
+					) union_tb 
+				) WHERE r > #{startIndex,jdbcType=NUMERIC} AND r <= #{startIndex,jdbcType=NUMERIC} + #{pageSize,jdbcType=NUMERIC}
+				]]>
+			</if>
+		<!--</dynamic> -->
+	</sql>
+</mapper>

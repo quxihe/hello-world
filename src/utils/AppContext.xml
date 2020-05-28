@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop" xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:oxm="http://www.springframework.org/schema/oxm"
+	xmlns:flow="http://www.springframework.org/schema/webflow-config" xmlns:int-mail="http://www.springframework.org/schema/integration/mail" xmlns:int-jms="http://www.springframework.org/schema/integration/jms"
+	xmlns:int-stream="http://www.springframework.org/schema/integration/stream" xmlns:jdbc="http://www.springframework.org/schema/jdbc" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:jms="http://www.springframework.org/schema/jms" default-autowire="byName" default-lazy-init="false" xmlns:lang="http://www.springframework.org/schema/lang" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:task="http://www.springframework.org/schema/task" xmlns:int-file="http://www.springframework.org/schema/integration/file" xmlns:amq="http://activemq.apache.org/schema/core"
+	xsi:schemaLocation="http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd
+		http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+		http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd
+		http://www.springframework.org/schema/integration/mail http://www.springframework.org/schema/integration/mail/spring-integration-mail.xsd
+		http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+		http://www.springframework.org/schema/oxm http://www.springframework.org/schema/oxm/spring-oxm-3.0.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+		http://www.springframework.org/schema/webflow-config http://www.springframework.org/schema/webflow-config/spring-webflow-config-2.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/integration/file http://www.springframework.org/schema/integration/file/spring-integration-file.xsd
+		http://www.springframework.org/schema/integration/jms http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd
+		http://www.springframework.org/schema/integration/stream http://www.springframework.org/schema/integration/stream/spring-integration-stream.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.9.0.xsd">
+
+	<!-- 加载注解声明的bean -->
+	<context:component-scan base-package="com.sinolife" />
+
+	<bean id="propertyPlaceholder" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+		<property name="ignoreResourceNotFound" value="true" />
+		<property name="locations">
+			<list>
+				<value>classpath:cfg.properties</value>
+			</list>
+		</property>
+	</bean>
+	<!-- <context:property-placeholder location="classpath:cfg.properties"/> -->
+	<mvc:annotation-driven />
+	<mvc:resources mapping="/CacheableResource/**" location="/CacheableResource/" />
+	<!-- 系统页面布局 -->
+	<mvc:resources mapping="/sf_home/**" location="/sf_home/" />
+	<mvc:default-servlet-handler />
+	<aop:config proxy-target-class="true" />
+	<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+
+	<!--单数据源事务控制 -->
+	<tx:annotation-driven transaction-manager="txManager" />
+
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<bean class="com.sinolife.config.AppConfig"></bean>
+
+	<bean id="dataSourceSZE" name="dataSourceSZE" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+		<property name="user" value="${sze.user}"></property>
+		<property name="password" value="${sze.password}"></property>
+		<property name="jdbcUrl" value="${sze.jdbcUrl}"></property>
+		<property name="driverClass" value="${sze.driverClass}"></property>
+		<property name="maxPoolSize" value="${sze.poolmax}"></property>
+		<property name="minPoolSize" value="${sze.poolmin}"></property>
+		<property name="initialPoolSize" value="${sze.poolinit}"></property>
+		<property name="maxStatements" value="0"></property>
+		<property name="maxStatementsPerConnection" value="0"></property>
+		<property name="maxConnectionAge" value="${sze.connectionAgeMax}"></property>
+		<property name="checkoutTimeout" value="${sze.timeOutCheck}"></property>
+		<property name="testConnectionOnCheckout" value="${sze.testConnectionOnCheckout}"></property>
+		<property name="preferredTestQuery" value="select 1 from dual"></property>
+		<property name="maxIdleTime" value="${sze.idleTimeMax}"></property>
+		<property name="maxAdministrativeTaskTime" value="${sze.adminTaskTimeMax}"></property>
+		<property name="numHelperThreads" value="${sze.helperThreadsNum}"></property>
+		<property name="acquireRetryAttempts" value="${sze.acquireRetryAttempts}"></property>
+	</bean>
+	
+	<bean id="dataSourceUM" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close" >
+		<property name="user" value="${um.jdbc.user}"></property>
+		<property name="password" value="${um.jdbc.password}"></property>
+		<property name="jdbcUrl" value="${um.jdbc.jdbcUrl}"></property>
+		<property name="driverClass" value="${um.jdbc.driverClass}"></property>
+		<property name="maxPoolSize" value="${um.jdbc.poolmax}"></property>
+		<property name="minPoolSize" value="${um.jdbc.poolmin}"></property>
+		<property name="initialPoolSize" value="${um.jdbc.poolinit}"></property>
+		<property name="maxStatements" value="0"></property>
+		<property name="maxStatementsPerConnection" value="0"></property>
+	    <property name="maxConnectionAge" value="${um.jdbc.connectionAgeMax}"></property>
+        <property name="checkoutTimeout" value="${um.jdbc.timeOutCheck}"></property>
+        <property name="testConnectionOnCheckout" value="${um.jdbc.testConnectionOnCheckout}"></property>
+        <property name="preferredTestQuery" value="select 1 from dual"></property>
+        <property name="maxIdleTime" value="${um.jdbc.idleTimeMax}"></property>
+        <property name="maxAdministrativeTaskTime" value="${um.jdbc.adminTaskTimeMax}"></property>
+        <property name="numHelperThreads" value="${um.jdbc.helperThreadsNum}"></property>
+        <property name="acquireRetryAttempts" value="${um.jdbc.acquireRetryAttempts}"></property>
+	</bean>
+
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:mybatis-config.xml"/>
+		<property name="mapperLocations" value="classpath*:com.sinolife/**/dao/mapper/*.xml" />
+	</bean>
+
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.sinolife.**.dao.mapper" />
+	</bean>
+
+	<bean id="sqlMapClient" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+		<property name="configLocation">
+			<value>classpath:sql-map-config.xml</value>
+		</property>
+		<property name="mappingLocations">
+			<value>classpath*:/com/sinolife/**/*-ibatis2.xml</value>
+		</property>
+		<property name="dataSource" ref="dataSource" />
+		<property name="useTransactionAwareDataSource" value="true"></property>
+	</bean>
+
+	<!-- 发送邮件的通用配置 -->
+	<bean id="mailService" class="com.sinolife.sf.framework.email.impl.MailServiceImpl">
+		<property name="host" value="szhubap1.sino-life.com" />
+		<property name="defaultEncoding" value="UTF-8"></property>
+		<property name="javaMailProperties">
+			<props>
+				<prop key="mail.smtp.timeout">30000</prop>
+				<prop key="mail.smtp.port">25</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="weChatPayView" class="com.sinolife.efs.grown.command.view.WeChatPayView"
+          p:contentType="text/plain" p:url="" scope="prototype"/> 
+	
+	<bean id="viewResolver"
+          class="com.sinolife.efs.grown.command.viewresolver.MultipleViewResolver" > 
+        <property name="resolvers"> 
+            <map>             
+                <entry key="weChatPay"> 
+                    <bean class="com.sinolife.efs.grown.command.viewresolver.WeChatPayViewResolver"
+                           p:cache="false"> 
+                    </bean> 
+                </entry> 
+                <entry key="jsp"> 
+                    <bean  class="org.springframework.web.servlet.view.InternalResourceViewResolver"> 
+					        <property name="prefix" value="/WEB-INF/views/" /> 
+					        <property name="suffix" value=".jsp"/> 
+					 </bean>
+                </entry>                 
+            </map> 
+        </property> 
+    </bean>
+	 <!-- View Resolver for JSP files --> 
+	 <bean id="jspViewResolver"
+	          class="org.springframework.web.servlet.view.InternalResourceViewResolver"> 
+	        <property name="prefix" value="/WEB-INF/views/" /> 
+	        <property name="suffix" value=".jsp"/> 
+	 </bean>
+	 
+	<bean id="multipartResolver" class="com.sinolife.sf.framework.comm.CommonsMultipartResolver">
+		<property name="maxUploadSize" value="31457280" />
+	</bean>
+
+	<!-- 国际化,并且可以批定文件编码,可以使用classpath: 或者WEB-INF/ 前缀 -->
+	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>classpath:i18n/messages</value>
+				<value>classpath:i18n/ValidationMessages</value>
+			</list>
+		</property>
+		<property name="defaultEncoding" value="UTF-8" />
+		<property name="cacheSeconds" value="600" />
+	</bean>
+
+	<bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
+		<property name="messageInterpolator" ref="messageInterpolator" />
+	</bean>
+
+	<bean id="messageInterpolator" class="org.hibernate.validator.messageinterpolation.ResourceBundleMessageInterpolator">
+		<constructor-arg ref="resourceBundleLocator"></constructor-arg>
+	</bean>
+
+	<bean id="resourceBundleLocator" class="com.sinolife.sf.framework.validation.MessageSourceResourceBundleLocator">
+		<property name="messageSource" ref="messageSource" />
+	</bean>
+
+	<bean id="pubUserManageService" name="pubUserManageService" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.efs.um.pub.service.PubUserManageService"></property>
+	</bean>
+
+	<bean id="pubUserPolicyManageService" name="pubUserPolicyManageService" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.efs.policy.pub.service.PubUserPolicyManageService"></property>
+	</bean>
+	
+	<bean id="productPremInfoService" class="com.sinolife.sf.rpc.ServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.intf.mit.service.ProductPremInfoService" />
+		<property name="serviceId" value="com.sinolife.intf.mit.service.ProductPremInfoService" />
+	</bean>
+	<bean id="orderServiceSao" name="orderServiceSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.efs.order.pub.service.OrderService"></property>
+	</bean>
+	
+	<bean id="EMASao" name="EMASao" class=" com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.EmaSao" ></property>
+	</bean>
+	
+	<bean id="productSao" name="productSao" class=" com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.ProductSao" ></property>
+	</bean>
+    <bean id="WcpmSao" name="WcpmSao" class=" com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.WcpmSao" ></property>
+	</bean>
+	<bean id="WcpcSao" name="WcpcSao" class=" com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.WcpcSao" ></property>
+	</bean>
+	<bean id="cpsSao" name="cpsSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.CpsSao" ></property>
+	</bean>
+	
+	<bean id="userManagerSao" name="userManagerSao" class=" com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.UserManagerSao" ></property>
+	</bean>
+	<bean id="gqsSao" name="gqsSao" class=" com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.GqsSao" ></property>
+	</bean>
+	<bean id="biabSao" name="biabSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.BiabSao" ></property>
+	</bean>
+	<bean id="wxPayNoPwdSao" name="wxPayNoPwdSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.WcpcWxPayNoPwdSao" ></property>
+	</bean>
+	<bean id="finSao" name="finSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.FinSao" ></property>
+	</bean>
+	<bean id="lesSao" name="lesSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.LesSao" ></property>
+	</bean>
+	<bean id="eosSao" name="eosSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.EosSao" ></property>
+	</bean>
+	<bean id="efsPubSao" name="efsPubSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.EfsPubSao" ></property>
+	</bean>
+	<bean id="posPubSao" name="posPubSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.PosPubSao" ></property>
+	</bean>
+	<bean id="rnSao" name="rnSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.RnSao" ></property>
+	</bean>
+	<bean id="clientInfoSao" name="clientInfoSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.efs.sao.ClientInfoSao" ></property>
+	</bean>
+	<bean id="lssSao" name="lssSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.LssSao" ></property>
+	</bean>
+    <!-- 电商与MCC数据库对接 -->
+    <bean id="MccSao" name="MccSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.MccSao" ></property>
+	</bean>
+	<bean id="WebPosAcceptInterface" class="com.sinolife.sf.rpc.ServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.PosPubService" />
+		<property name="serviceId" value="com.sinolife.pos.pubInterface.biz.service.WebPosAcceptInterface" />
+	</bean>
+	<!-- 电子保单查看 -->
+	<bean id="uwService" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.UWSevice" />
+	</bean>
+	<bean id="productService" class="com.sinolife.lem.product.pub.service.impl.ProductServiceImpl">
+        <property name="jsonUrl">
+            <value>${epoint.url}</value>
+        </property>
+    </bean>
+    <bean id="irsSao" name="irsSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.IrsSao" ></property>
+	</bean>
+	
+	<bean id="claimSao" name="claimSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.ClaimSao" ></property>
+	</bean>
+	<bean id="bigDataSao" name="bigDataSao" class="com.sinolife.sf.esb.EsbServiceRefence">
+		<property name="interfaceClass" value="com.sinolife.lem.sao.BigDataSao" ></property>
+	</bean>
+       <!-- 总任务调度器 -->
+    <bean id="startAutoCancelQuertz" lazy-init="true" autowire="no"
+        class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+            	<!-- ref bean="getSavingPlanResultJobTime"/> 推送订阅月度成绩单消息任务调度 -->
+                <ref bean="posAddEventHandleJobTime" />
+                <ref bean="asynJobTaskTime" />
+                <ref bean="grownPointsJobTime"/>
+                <ref bean="luckMoneyHandleJobTime"/>
+                <ref bean="loadQuartzTaskJobTime"/>
+            </list>
+        </property>
+    </bean>
+    <!-- 活动任务调度 -->
+	<!-- 异步加保任务调度 -->
+	<bean id="posAddEventHandleJob" class="com.sinolife.lem.job.service.task.item.PosAddEventHandleJob"></bean>
+	<!-- 每隔10分钟执行一次 -->
+    <bean id="posAddEventHandleJobTask"
+        class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="posAddEventHandleJob" />
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>handleRechargeEvent</value>
+        </property>
+        <property name="concurrent" value="false"/>
+    </bean>
+    <!-- 定义触发时间 -->
+    <bean id="posAddEventHandleJobTime"
+        class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="posAddEventHandleJobTask" />
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+            <!-- 每隔2分钟执行一次-->
+            <value>0/30 * * * * ?</value>
+        </property>
+    </bean>
+    
+    <!-- 异步积分任务调度 -->
+	<bean id="grownPointsJob" class="com.sinolife.lem.job.service.task.item.GrownPointsJob"></bean>
+    <bean id="grownPointsJobTask"
+        class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="grownPointsJob" />
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>handleRechargeEvent</value>
+        </property>
+        <property name="concurrent" value="false"/>
+    </bean>
+    <!-- 定义触发时间 -->
+    <bean id="grownPointsJobTime"
+        class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="grownPointsJobTask" />
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+            <!-- 每隔30秒执行一次-->
+            <value>0/30 * * * * ?</value>
+        </property>
+    </bean>
+    
+    <!-- 他人红包加保任务调度 -->
+	<bean id="luckMoneyHandleJob" class="com.sinolife.lem.job.service.task.item.LuckMoneyJob"></bean>
+	<!-- 每隔10分钟执行一次 -->
+    <bean id="luckMoneyHandleJobTask"
+        class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="luckMoneyHandleJob" />
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>handleRechargeEvent</value>
+        </property>
+        <property name="concurrent" value="false"/>
+    </bean>
+    <!-- 定义触发时间 -->
+    <bean id="luckMoneyHandleJobTime"
+        class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="luckMoneyHandleJobTask" />
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+            <!-- 每隔2分钟执行一次-->
+            <value>0 0/2 * * * ?</value>
+        </property>
+    </bean>
+  
+	<!-- 定义调用类 -->
+	<bean id="asynJob" class="com.sinolife.efs.activitygoods.service.impl.AsynchronousTaskServiceImpl"></bean>
+    <bean id="asynJobTask"
+        class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="asynJob" />
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>doBiz</value>
+        </property>
+        <property name="concurrent" value="false"/>
+    </bean>
+	
+	<!-- 定义触发时间 -->
+    <bean id="asynJobTaskTime"
+        class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="asynJobTask" />
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+            <!-- 每2分钟执行一次 -->
+            <value>0 0/2 * * * ?</value>
+        </property>
+    </bean>
+    
+    
+    <!-- 调度调度配置 begin -->
+        <bean id="loadQuartzTaskJob" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+    	<property name="targetObject">
+            <ref bean="loadQuartzTask" />
+        </property>
+        <property name="targetMethod">
+            <value>load</value>
+        </property>
+    </bean>
+    
+    <!-- 定义触发时间 -->
+    <bean id="loadQuartzTaskJobTime"
+        class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="loadQuartzTaskJob" />
+        </property>
+        <property name="cronExpression">
+            <value>0 0/2 * * * ?</value>
+        </property>
+    </bean>
+    <!--调度调度配置  end  -->
+    
+    
+        <!-- ActiveMQ 连接工厂 -->
+    <!-- 真正可以产生Connection的ConnectionFactory，由对应的 JMS服务厂商提供-->
+    <amq:connectionFactory id="amqConnectionFactory"
+        brokerURL="${lem.activemq.ip}" 	userName="${lem.activemq.username}" password="${lem.activemq.password}"  />
+
+    <!-- Spring Caching连接工厂 -->
+    <!-- Spring用于管理真正的ConnectionFactory的ConnectionFactory -->  
+    <bean id="connectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+        <!-- 目标ConnectionFactory对应真实的可以产生JMS Connection的ConnectionFactory -->  
+        <property name="targetConnectionFactory" ref="amqConnectionFactory"></property>
+        <!-- Session缓存数量 -->
+        <property name="sessionCacheSize" value="100" />
+    </bean>
+
+    <!-- Spring JmsTemplate 的消息生产者 start-->
+
+    <!-- 定义JmsTemplate的Queue类型 -->
+    <bean id="jmsQueueTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <!-- 这个connectionFactory对应的是我们定义的Spring提供的那个ConnectionFactory对象 -->  
+        <constructor-arg ref="connectionFactory" />
+        <!-- 非pub/sub模型（发布/订阅），即队列模式 -->
+        <property name="pubSubDomain" value="false" />
+    </bean>
+
+    <!-- 定义JmsTemplate的Topic类型 -->
+    <!-- 对于Topic而言，一条消息只有所有的订阅者都消费才会被删除 -->
+    <bean id="jmsTopicTemplate" class="org.springframework.jms.core.JmsTemplate">
+         <!-- 这个connectionFactory对应的是我们定义的Spring提供的那个ConnectionFactory对象 -->  
+        <constructor-arg ref="connectionFactory" />
+        <!-- pub/sub模型（发布/订阅） -->
+        <property name="pubSubDomain" value="true" />
+    </bean>
+
+    <!--Spring JmsTemplate 的消息生产者 end-->
+
+    <!-- 消息消费者 start-->
+
+    <!-- 定义Queue监听器 -->
+    <jms:listener-container destination-type="queue" container-type="default" 
+        connection-factory="connectionFactory" acknowledge="auto">
+        <jms:listener destination="${listener.queue.destination.lem}" ref="${listener.queue.ref.lem}"/>
+        <jms:listener destination="lem.lem.angel.autoApply" ref="asynTaskHandleReceiverQuene"/>
+        <jms:listener destination="lem.lem.asyntask.normal" ref="asynTaskHandleReceiverQuene"/>
+        <jms:listener destination="lem.grown.view.handler.queue.event.id" ref="grownPointsJobReceiver"/>
+        <jms:listener destination="lem.grown.view.handler.queue.event_01.id" ref="grownPointsJob01Receiver"/>
+        <jms:listener destination="lem.grown.cqgsign.target.set" ref="grownSetSignTargetReceiver"/>
+        <jms:listener destination="lem.pension.dfwsign.target.set" ref="pensionSetSignTargetReceiver"/>
+        <jms:listener destination="lem.grown.creditScore.batch.update" ref="grownCreditScoreBatchUpdateReceiver"/>
+        <jms:listener destination="lem.pension.creditScore.batch.update" ref="pensionCreditScoreBatchUpdateReceiver"/>
+        <jms:listener destination="lem.activity.pigBean.grab.start" ref="pigBean2020GrabStartQuene"/>
+        <jms:listener destination="lem.activity.pigBean.game.start" ref="pigBean2020GameStartQuene"/>
+        <jms:listener destination="lem.activity.newYear.rank.start" ref="newYear2020RankStartQuene"/>
+        <jms:listener destination="lem.eos.easyTeach.asyn.user" ref="easyTeachReceiverQuene"/>
+        <jms:listener destination="lem.smallRedBook.info.handle" ref="smallRedBookInfoHandleReciver"/>
+        <jms:listener destination="lem.synchroViewInfo.handle" ref="synchroViewInfoReciver"/>
+        <jms:listener destination="lem.grown.view.handler.queue.common.event" ref="commonEventReciver"/>
+        <jms:listener destination="lem.synchroPopupInfo.handle" ref="synchroPopupInfoReciver"/>
+        <jms:listener destination="lem.publicMqExecute.handle" ref="publicMqExecuteHandleReciver"/>
+    </jms:listener-container>        
+    
+</beans>
